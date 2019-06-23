@@ -23,15 +23,23 @@ int main()
     TestBuffer::Holder current = buffer.getCurrent();
     std::cout << current->at(0) << std::endl;
 
+    {
+        TestBuffer::Holder nth = buffer.getNth(5);
+        std::cout << nth->at(0) << std::endl;
+    }
+    {
+        TestBuffer::Holder final = buffer.getFinal();
+        std::cout << final->at(0) << std::endl;
 
-    TestBuffer::Holder nth = buffer.getNth(5);
-    std::cout << nth->at(0) << std::endl;
+        TestBuffer::Holder next = buffer.getNext(final);
+        std::cout << next->at(0) << std::endl;
+    }
 
-    TestBuffer::Holder final = buffer.getFinal();
-    std::cout << final->at(0) << std::endl;
 
-    TestBuffer::Holder next = buffer.getNext(final);
-    std::cout << next->at(0) << std::endl;
 
+    {
+        std::vector<TestBuffer::Holder> vector = buffer.getCurrentN(5);
+        std::cout << vector.at(4)->at(0) << std::endl;
+    }
     return 0;
 }

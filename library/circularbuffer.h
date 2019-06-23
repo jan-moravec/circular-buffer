@@ -23,6 +23,8 @@ public:
             delete item;
         }
     }
+    CircularBuffer(const CircularBuffer &) = delete;
+    CircularBuffer &operator=(const CircularBuffer &) = delete;
 
     void waitForNew()
     {
@@ -34,17 +36,17 @@ public:
 
     Holder prepareHolder(CircularItem *item)
     {
-        return Holder(this, item);
+        return Holder(item);
     }
 
-    std::vector<Holder> prepareHolderVector(const std::vector<CircularItem *> &frames)
+    std::vector<Holder> prepareHolderVector(const std::vector<CircularItem *> &items)
     {
-        std::vector<CircularItem> frames_vector;
-        for (CircularItem *frame: frames) {
-            frames_vector.push_back(castFrame(frame));
+        std::vector<Holder> items_vector;
+        for (CircularItem *item: items) {
+            items_vector.push_back(Holder(item));
         }
 
-        return frames_vector;
+        return items_vector;
     }
 
     Holder getCurrent() { return prepareHolder(getCurrentItem()); }
@@ -286,7 +288,7 @@ protected:
 protected:
     void push(T *data)
     {
-        items.push_back(new CircularItem(data));
+        items.push_back(new CircularItem(this, data));
     }
     void connect()
     {
@@ -315,14 +317,23 @@ private:
     std::set<CircularItem *> skipped;
 };
 
+/**
+ * Class represents the item in the buffer. It holds the pointer to data, it also deletes the data.
+ *
+ * It implements the basic functions for the buffer - pointer data, pointer to next and previous items.
+ * It also implements the synchronization in form of semaphor. This class is not thread safe.
+ */
 template<typename T>
 class CircularBuffer<T>::CircularItem
 {
 public:
-    CircularItem(T *data): data(data) {}
+    CircularItem(CircularBuffer<T> *buffer, T *data): buffer(buffer), data(data) {}
     ~CircularItem() { delete data; }
+    CircularItem(const CircularItem &) = delete;
+    CircularItem &operator=(const CircularItem &) = delete;
 
     T *get() { return data; }
+    CircularBuffer<T> *getBuffer() {return buffer; }
 
     CircularItem *getNext() const { return next; }
     CircularItem *getLast() const { return last; }
@@ -330,13 +341,14 @@ public:
     void setLast(CircularItem *item) { last = item; }
 
     bool isValid() const { return valid; }
-    void setValid(bool valid) { CircularItem::valid = valid; }
+    void setValid(bool valid) { this->valid = valid; }
 
     void hold() { semaphore++; }
     void release() { if (semaphore > 0) semaphore--; }
     bool isUsed() const { return (semaphore != 0); }
 
 private:
+    CircularBuffer<T> *buffer;
     T *data;
 
     bool valid = true;
@@ -346,24 +358,27 @@ private:
     CircularItem *last = nullptr;
 };
 
+/**
+ * Class for passing the data to the user. It releases the semaphor atomatically.
+ *
+ * For safety reasons, the object can not be copied.
+ */
 template<typename T>
 class CircularBuffer<T>::Holder
 {
     using Item = typename CircularBuffer<T>::CircularItem;
     using Releaser = std::function<void(Item *)>;
-    using ItemPointer = std::unique_ptr< Item, Releaser >;
 
-    const Releaser releaser = [this](Item *item) { buffer->releaseItem(item); };
-    CircularBuffer<T> *buffer;
-    ItemPointer item;
+    const Releaser releaser = [](Item *item) { item->getBuffer()->releaseItem(item); };
+    std::unique_ptr<Item, Releaser> itemPtr;
 
 public:
-    Holder(CircularBuffer<T> *buffer, typename CircularBuffer<T>::CircularItem *item): buffer(buffer), item(item, releaser) {}
+    Holder(typename CircularBuffer<T>::CircularItem *item): itemPtr(item, releaser) { }
 
-    const T *get() const { return item->get(); }
-    const T *operator*() const { return item->get(); }
-    const T *operator->() const { return item->get(); }
-    Item *getItem() { return item.get(); }
+    const T *get() const { return itemPtr->get(); }
+    const T *operator*() const { return itemPtr->get(); }
+    const T *operator->() const { return itemPtr->get(); }
+    Item *getItem() const { return itemPtr.get(); }
 };
 
 #endif // CIRCULARBUFFER_H
