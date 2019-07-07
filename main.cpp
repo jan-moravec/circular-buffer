@@ -12,7 +12,7 @@ public:
             *pi = {i};
             push(pi);
         }
-        connect();
+        //connect();
     }
 };
 
@@ -31,14 +31,14 @@ int main()
         TestBuffer::Holder final = buffer.getFinal();
         std::cout << final->at(0) << std::endl;
 
-        TestBuffer::Holder next = buffer.getNext(final);
-        std::cout << next->at(0) << std::endl;
+        //TestBuffer::Holder next = buffer.getNext(final);
+        //std::cout << next->at(0) << std::endl;
     }
 
 
 
     {
-        std::vector<TestBuffer::Holder> vector = buffer.getCurrentN(5);
+        std::vector<TestBuffer::Holder> vector = buffer.getCurrent(5);
         std::cout << vector.at(4)->at(0) << std::endl;
     }
     return 0;
