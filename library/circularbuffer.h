@@ -13,16 +13,17 @@ template<typename T>
 class CircularBuffer
 {
 public:
-    static_assert(std::is_copy_constructible<T>::value, "CircularBuffer requires copying.");
+    static_assert(std::is_copy_constructible<T>::value, "CircularBuffer requires copying. Maybe consider using a pointer.");
     class CircularItem;
     class Holder;
 
     CircularBuffer() = default;
+    CircularBuffer(std::size_t n) {
+        resize(n);
+    }
     virtual ~CircularBuffer()
     {
-        for (CircularItem *&item: items) {
-            delete item;
-        }
+        clear();
     }
 
     /// Not implemented yet.
@@ -30,10 +31,11 @@ public:
     CircularBuffer &operator=(const CircularBuffer &) = delete;
 
     /// Prepare n default items.
-    void prepare(unsigned n)
+    void resize(std::size_t n)
     {
+        clear();
         for (unsigned i = 0; i < n; ++i) {
-            items.push_back(new CircularItem(this, new T));
+            items.push_back(new CircularItem(this, new T{}));
         }
 
         // Connect items to circle
@@ -49,6 +51,14 @@ public:
         // Final item, last is always current
         final = items.front();
         items.front()->setLast(items.back());
+    }
+
+    void clear()
+    {
+        for (CircularItem *item: items) {
+            delete item;
+        }
+        items.clear();
     }
 
     /// Push pointer to data to buffer. It takes ownership of the data.
@@ -431,7 +441,7 @@ public:
         buffer->holdItem(item);
     }
     Holder &operator=(const Holder &other) {
-        if(&other == this) {
+        if(this == &other) {
             return *this;
         }
         buffer = other.buffer;

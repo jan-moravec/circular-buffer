@@ -18,6 +18,7 @@ public:
 
 int main()
 {
+    CircularBuffer<int> test;
     TestBuffer buffer;
 
     TestBuffer::Holder current = buffer.getCurrent();
@@ -30,9 +31,6 @@ int main()
     {
         TestBuffer::Holder final = buffer.getFinal();
         std::cout << final->at(0) << std::endl;
-
-        //TestBuffer::Holder next = buffer.getNext(final);
-        //std::cout << next->at(0) << std::endl;
     }
 
 
