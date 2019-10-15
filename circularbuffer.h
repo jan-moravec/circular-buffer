@@ -90,11 +90,11 @@ class CircularBuffer<T>::CircularItem
 {
 public:
     friend CircularBuffer;
-    T *get() { return data; }
+    T *data() { return data_pointer; }
 
 private:
-    CircularItem(T *data, std::size_t id): data(data), id(id) {}
-    ~CircularItem() { delete data; }
+    CircularItem(T *data, std::size_t id): data_pointer(data), id(id) {}
+    ~CircularItem() { delete data_pointer; }
     CircularItem(const CircularItem &) = delete;
     CircularItem &operator=(const CircularItem &) = delete;
 
@@ -113,7 +113,7 @@ private:
     std::size_t getId() const { return id; }
 
 private:
-    T *data;
+    T *data_pointer;
 
     const std::size_t id = 0;
     bool valid = true;
@@ -131,7 +131,7 @@ template<typename T, typename U = T>
 std::shared_ptr<U> make_shared_circular(CircularBuffer<T> *buffer, typename CircularBuffer<T>::CircularItem *item, U *data = nullptr)
 {
     if (!data) {
-        data = item->get();
+        data = item->data();
     }
 
     std::shared_ptr<U> pointer(data, [buffer, item](U *){
@@ -265,11 +265,7 @@ typename CircularBuffer<T>::CircularItem *CircularBuffer<T>::getNewCurrent()
         final = item->getNext();
     }
 
-    //current->setNext(item);
     item->setLast(current);
-
-    // Set new current item
-    //current = item;
 
     // Keep the circle
     current->setNext(final);
@@ -453,7 +449,6 @@ std::vector<typename CircularBuffer<T>::CircularItem *> CircularBuffer<T>::getNe
 template<typename T>
 void CircularBuffer<T>::holdItem(CircularItem *item)
 {
-    //std::cout << __PRETTY_FUNCTION__ << std::endl;
     std::lock_guard<std::mutex> lock(mutex);
     item->hold();
 }
@@ -461,7 +456,6 @@ void CircularBuffer<T>::holdItem(CircularItem *item)
 template<typename T>
 void CircularBuffer<T>::releaseItem(CircularItem *item)
 {
-    //std::cout << __PRETTY_FUNCTION__ << std::endl;
     std::lock_guard<std::mutex> lock(mutex);
     item->release();
 }

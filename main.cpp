@@ -109,7 +109,7 @@ void checkUpdating()
     // Initialize the whole buffer
     for (std::size_t i = 0; i < buffer_size; ++i) {
         BufferInt::CircularItem *item = buffer_int.getNewCurrent();
-        *item->get() = i;
+        *item->data() = i;
         buffer_int.setNewReady(item);
 
         std::shared_ptr<int> holder = make_shared_circular<int>(&buffer_int, buffer_int.getCurrent());
@@ -125,7 +125,7 @@ void checkUpdating()
     // Continue with placing new data and replacing the old
     for (std::size_t i = buffer_size; i < buffer_size * 8; ++i) {
         BufferInt::CircularItem *item = buffer_int.getNewCurrent();
-        *item->get() = i;
+        *item->data() = i;
         buffer_int.setNewReady(item);
 
         std::shared_ptr<int> holder = make_shared_circular<int>(&buffer_int, buffer_int.getCurrent());
@@ -145,7 +145,7 @@ void checkUpdatingAndLock()
     // Initialize the whole buffer
     for (std::size_t i = 0; i < buffer_size; ++i) {
         BufferInt::CircularItem *item = buffer_int.getNewCurrent();
-        *item->get() = i;
+        *item->data() = i;
         buffer_int.setNewReady(item);
     }
 
@@ -159,7 +159,7 @@ void checkUpdatingAndLock()
 
     for (std::size_t i = 0; i < buffer_size / 2; ++i) {
         BufferInt::CircularItem *item = buffer_int.getNewCurrent();
-        *item->get() = -static_cast<int>(i);
+        *item->data() = -static_cast<int>(i);
         buffer_int.setNewReady(item);
     }
 
@@ -182,7 +182,7 @@ void checkUpdatingAndLock()
 
     for (std::size_t i = 0; i < buffer_size; ++i) {
         BufferInt::CircularItem *item = buffer_int.getNewCurrent();
-        *item->get() = i;
+        *item->data() = i;
         buffer_int.setNewReady(item);
 
         std::shared_ptr<int> holder = make_shared_circular<int>(&buffer_int, buffer_int.getCurrent());
@@ -204,7 +204,7 @@ void checkDataLosses()
     // Initialize the whole buffer
     for (std::size_t i = 0; i < buffer_size; ++i) {
         BufferInt::CircularItem *item = buffer_int.getNewCurrent();
-        *item->get() = i;
+        *item->data() = i;
         buffer_int.setNewReady(item);
     }
 
@@ -215,7 +215,7 @@ void checkDataLosses()
     holders = make_shared_circular<int>(&buffer_int, buffer_int.getFinal(buffer_size / 2));
     for (std::size_t i = 0; i < buffer_size / 2; ++i) {
         BufferInt::CircularItem *item = buffer_int.getNewCurrent();
-        *item->get() = -static_cast<int>(i);
+        *item->data() = -static_cast<int>(i);
         buffer_int.setNewReady(item);
     }
     holders.clear();
@@ -233,7 +233,7 @@ void checkLockAndExceptions()
     // Initialize the whole buffer
     for (std::size_t i = 0; i < buffer_size; ++i) {
         BufferInt::CircularItem *item = buffer_int.getNewCurrent();
-        *item->get() = i;
+        *item->data() = i;
         buffer_int.setNewReady(item);
     }
 
@@ -253,7 +253,7 @@ void checkLockAndExceptions()
     // Now it should work
     item = buffer_int.getNewCurrent();
     assert(item != nullptr);
-    *item->get() = 123;
+    *item->data() = 123;
     buffer_int.setNewReady(item);
 
     std::shared_ptr<int> holder = make_shared_circular<int>(&buffer_int, buffer_int.getCurrent());
@@ -285,7 +285,7 @@ void checkThreadSynchronization()
     std::thread thread_generate([&](){
         for (std::size_t i = counter; i > 0; --i) {
             BufferInt::CircularItem *item = buffer_int.getNewCurrent();
-            *item->get() = i;
+            *item->data() = i;
             std::cout << "Generated: " << i << std::endl;
             buffer_int.setNewReady(item);
             std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -327,8 +327,8 @@ void checkMultithreaded()
         int counter = buffer_size;
         while (run_generate) {
             BufferData::CircularItem *item = buffer_data.getNewCurrent();
-            *item->get()->data = counter++;
-            item->get()->timepoint = std::chrono::high_resolution_clock::now();
+            *item->data()->data = counter++;
+            item->data()->timepoint = std::chrono::high_resolution_clock::now();
             buffer_data.setNewReady(item);
             std::this_thread::sleep_for(std::chrono::milliseconds(2));
         }
